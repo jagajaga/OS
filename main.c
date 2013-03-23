@@ -8,7 +8,7 @@ void _write(int to, char * what, size_t size)
     {
         writen += write(to, what + writen, size);
 
-        if (writen == 0)
+        if (errno == -1)
         {
 			
         }
