@@ -1,4 +1,8 @@
 #include <unistd.h>
+#include <errno.h>
+
+char ** path[2];
+path[0] = "";
 
 void _write(int to, char * what, size_t size)
 {
@@ -7,10 +11,9 @@ void _write(int to, char * what, size_t size)
     while (writen <= size)
     {
         writen += write(to, what + writen, size);
-
         if (errno == -1)
         {
-			
+            break; //TODO check error and display it
         }
         size -= writen;
     }
@@ -20,7 +23,6 @@ int main (int argc, char * argv[])
     int pipefd[2];
     pipe (pipefd);
     _write(1, "hello\n", 6);
-
     if (fork())
     {
         dup2(pipefd[1], 1);
@@ -35,6 +37,5 @@ int main (int argc, char * argv[])
         close(pipefd[1]);
         execl("/usr/bin/grep", "grep", "file", NULL);
     }
-
     return 0;
 }

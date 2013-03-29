@@ -1,5 +1,5 @@
 #include <unistd.h>
-#include <stdio.h>
+#include <stdlib.h>
 
 int get_int(char * c)
 {
@@ -12,9 +12,18 @@ int get_int(char * c)
 	return result;
 }
 
+void _read(int fd, char * buffer, size_t size)
+{
+
+}
+
 int main (int argc, char ** argv)
 {
-    int k = get_int(argv[1]); 
-	write(1, k, );
+    int k = get_int(argv[1]);
+	char * buffer;
+	buffer = malloc(k);
+	read(0, buffer, k);
+	write(1, buffer, k);
+	write(1, buffer, k);
     return 0;
 }
