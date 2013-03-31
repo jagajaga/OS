@@ -57,11 +57,11 @@ int main (int argc, char ** argv)
     int k = get_int(argv[1]);
     char * buffer  = malloc(k);
     char * c = malloc(1);
-    size_t i, len = 0, c_result = -1;
+    size_t i, c_result = -1;
     char * new_line = "\n";
     while (c_result != 0)
     {
-        size_t buffer_result = _read(0, buffer, k);
+        _read(0, buffer, k);
         c_result = _read(0, c, 1);
         if ((c[0] == '\n'))
         {
@@ -75,10 +75,10 @@ int main (int argc, char ** argv)
         while ((c[0] != '\n'))
         {
             c_result = _read(0, c, 1);
-	    if(c_result == 0)
-	    {
-		return 0;
-	    }
+            if(c_result == 0)
+            {
+                return 0;
+            }
         }
     }
     return 0;
