@@ -20,7 +20,7 @@ size_t _write(int fd, char * buf, size_t size)
         size_t result = write(fd, buf +current, size);
         if (result < 1)
         {
-	    return result;
+            return result;
         }
         current += result;
         size -= result;
@@ -40,7 +40,7 @@ size_t _read(int fd, char * buffer, size_t size)
         size_t result = read(fd, buffer + current, size);
         if (result < 1)
         {
-	    return result;
+            return result;
         }
         current += result;
         size -= result;
@@ -61,21 +61,25 @@ int main (int argc, char ** argv)
     char * new_line = "\n";
     while (c_result != 0)
     {
-        _read(0, buffer, k);
+        size_t buffer_result = _read(0, buffer, k);
         c_result = _read(0, c, 1);
-        if (c[0] == '\n')
+        if ((c[0] == '\n'))
         {
             _write(1, buffer, k);
             _write(1, new_line, 1);
             _write(1, buffer, k);
             _write(1, new_line, 1);
-	    continue;
+            continue;
         }
         c_result = -1;
-	while ((c_result > 0) || (c[0] == '\n'))
-	{
-	    c_result = _read(0, c, 1);
-	}
+        while ((c[0] != '\n'))
+        {
+            c_result = _read(0, c, 1);
+	    if(c_result == 0)
+	    {
+		return 0;
+	    }
+        }
     }
     return 0;
 }
