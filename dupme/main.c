@@ -14,7 +14,7 @@ int get_int(char * c)
 
 size_t _write(int fd, char * buf, size_t size)
 {
-    size_t current;
+    size_t current = 0;
     while (current <= size)
     {
         size_t result = write(fd, buf +current, size);
@@ -34,7 +34,7 @@ size_t _write(int fd, char * buf, size_t size)
 
 size_t _read(int fd, char * buffer, size_t size)
 {
-    size_t current;
+    size_t current = 0;
     while(current <= size)
     {
         size_t result = read(fd, buffer + current, size);
@@ -55,9 +55,34 @@ size_t _read(int fd, char * buffer, size_t size)
 int main (int argc, char ** argv)
 {
     int k = get_int(argv[1]);
-    char * buffer;
-    buffer = malloc(k);
-    _read(0, buffer, k);
-    _write(1, buffer, k);
+    char * buffer  = malloc(k);
+    char * c = malloc(1);
+    size_t i, count = 0;
+    char * new_line = "\n";
+    if (_read(0, buffer, 1) != -1)
+    {
+	c[0] = buffer[0];
+        count++;
+    }
+    for (i = 1; c[0] != 0; i++)
+    {
+        if (_read(0, c, 1) != -1)
+        {
+            if (count <= k && c[0] == '\n')
+            {
+                _write(1, buffer, count);
+                _write(1, new_line, 1);
+                _write(1, buffer, count);
+                _write(1, new_line, 1);
+		return 0;
+            }
+            buffer[i % k] = c[0];
+            count++;
+        }
+        if (i % k == 0)
+        {
+            count = 0;
+        }
+    }
     return 0;
 }
