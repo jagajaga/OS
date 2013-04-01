@@ -56,25 +56,35 @@ int main (int argc, char ** argv)
 {
     int k = get_int(argv[1]);
     char * buffer  = malloc(k);
-    char * c = malloc(1);
-    size_t i, c_result = -1;
+    char c;
+    size_t i, c_result = -1, count = 0;
     char * new_line = "\n";
     while (c_result != 0)
     {
-        _read(0, buffer, k);
-        c_result = _read(0, c, 1);
-        if ((c[0] == '\n'))
+        c_result = __read(0, &c, 1);
+        while((c != '\n') && (c_result != 0) && (count <= k))
         {
-            _write(1, buffer, k);
-            _write(1, new_line, 1);
-            _write(1, buffer, k);
-            _write(1, new_line, 1);
+            buffer[count] = c;
+            count++;
+            c_result = __read(0, &c, 1);
+        }
+        if (count <= k)
+        {
+            if (buffer[0] != '\n' && count)
+            {
+                _write(1, buffer, count);
+                _write(1, new_line, 1);
+                _write(1, buffer, count);
+                _write(1, new_line, 1);
+            }
+            count = 0;
             continue;
         }
+        count = 0;
         c_result = -1;
-        while ((c[0] != '\n'))
+        while ((c != '\n'))
         {
-            c_result = _read(0, c, 1);
+            c_result = _read(0, &c, 1);
             if(c_result == 0)
             {
                 return 0;
