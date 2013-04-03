@@ -12,12 +12,12 @@ int get_int(char * c)
     return result;
 }
 
-size_t _write(int fd, char * buf, size_t size)
+size_t _write(int fd, char * buffer, size_t size)
 {
     size_t current = 0;
     while (current <= size)
     {
-        size_t result = write(fd, buf +current, size);
+        size_t result = write(fd, buffer + current, size);
         if (result < 1)
         {
             return result;
