@@ -61,12 +61,12 @@ int main (int argc, char ** argv)
     char * new_line = "\n";
     while (c_result != 0)
     {
-        c_result = __read(0, &c, 1);
+        c_result = _read(0, &c, 1);
         while((c != '\n') && (c_result != 0) && (count <= k))
         {
             buffer[count] = c;
             count++;
-            c_result = __read(0, &c, 1);
+            c_result = _read(0, &c, 1);
         }
         if (count <= k)
         {
