@@ -55,40 +55,55 @@ size_t _read(int fd, char * buffer, size_t size)
 int main (int argc, char ** argv)
 {
     int k = get_int(argv[1]);
-    char * buffer  = malloc(k);
+    char * buffer  = malloc(k + 1);
     char c;
-    size_t i, c_result = -1, count = 0;
+    size_t i, c_result = -1, count = 0, buffer_result = 0, flag = 1;
     char * new_line = "\n";
-    while (c_result != 0)
+    while((buffer_result += _read(0, buffer + count, k + 1 - count)) > 0)
     {
-        c_result = _read(0, &c, 1);
-        while((c != '\n') && (c_result != 0) && (count <= k))
+        count = 0;
+        while (buffer[0] == '\n')
         {
-            buffer[count] = c;
-            count++;
-            c_result = _read(0, &c, 1);
+            memmove(buffer, buffer + 1, buffer_result - 1);
+            buffer_result--;
         }
-        if (count <= k)
+        if (buffer_result < k + 1)
         {
-            if (buffer[0] != '\n' && count)
-            {
-                _write(1, buffer, count);
-                _write(1, new_line, 1);
-                _write(1, buffer, count);
-                _write(1, new_line, 1);
-            }
-            count = 0;
+            count =  k + 1 - buffer_result;
             continue;
         }
-        count = 0;
-        c_result = -1;
-        while ((c != '\n'))
+        while(count < buffer_result)
         {
-            c_result = _read(0, &c, 1);
-            if(c_result == 0)
+            while (c != '\n' && count < buffer_result)
             {
-		free(buffer);
-                return 0;
+                c = buffer[count];
+                if (c == '\n')
+                {
+                    break;
+                }
+                count++;
+            }
+            if (count <= k)
+            {
+                if (flag)
+                {
+                    _write(1, buffer, count);
+                    _write(1, new_line, 1);
+                    _write(1, buffer, count);
+                    _write(1, new_line, 1);
+                }
+                else
+                {
+                    flag = 1;
+                }
+                count++;
+                memmove(buffer, buffer + count, buffer_result - count);
+		buffer_result -= count;
+                count = 0;
+            }
+            else
+            {
+                flag = 0;
             }
         }
     }
