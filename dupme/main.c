@@ -87,9 +87,11 @@ int main (int argc, char ** argv)
             c_result = _read(0, &c, 1);
             if(c_result == 0)
             {
+		free(buffer);
                 return 0;
             }
         }
     }
+    free(buffer);
     return 0;
 }
