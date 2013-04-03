@@ -57,24 +57,25 @@ int main (int argc, char ** argv)
     int k = get_int(argv[1]);
     char * buffer  = malloc(k + 1);
     char c;
-    size_t i, c_result = -1, count = 0, buffer_result = 0, flag = 1;
+    size_t i, trim_flag = 0, count = 0, buffer_result = 0, flag = 1;
     char * new_line = "\n";
     while((buffer_result += _read(0, buffer + count, k + 1 - count)) > 0)
     {
-        count = 0;
         while (buffer[0] == '\n')
         {
-            memmove(buffer, buffer + 1, buffer_result - 1);
             buffer_result--;
+            memmove(buffer, buffer + 1, buffer_result);
+            trim_flag = 1;
         }
-        if (buffer_result < k + 1)
+        if (buffer_result < k + 1 && trim_flag)
         {
             count =  k + 1 - buffer_result;
+            trim_flag = 0;
             continue;
         }
         while(count < buffer_result)
         {
-            while (c != '\n' && count < buffer_result)
+            while (count < buffer_result)
             {
                 c = buffer[count];
                 if (c == '\n')
@@ -82,6 +83,12 @@ int main (int argc, char ** argv)
                     break;
                 }
                 count++;
+            }
+            if (count == buffer_result)
+            {
+                flag = 1;
+                count = 0;
+                break;
             }
             if (count <= k)
             {
@@ -98,14 +105,23 @@ int main (int argc, char ** argv)
                 }
                 count++;
                 memmove(buffer, buffer + count, buffer_result - count);
-		buffer_result -= count;
+                buffer_result -= count;
                 count = 0;
             }
             else
             {
+                count = 0;
+                buffer_result = 0;
                 flag = 0;
             }
         }
+    }
+    if (count <= k && flag && count)
+    {
+        _write(1, buffer, count);
+        _write(1, new_line, 1);
+        _write(1, buffer, count);
+        _write(1, new_line, 1);
     }
     free(buffer);
     return 0;
