@@ -15,41 +15,32 @@ int get_int(char * c)
 size_t _write(int fd, char * buffer, size_t size)
 {
     size_t current = 0;
-    while (current <= size)
+    while (current < size)
     {
         size_t result = write(fd, buffer + current, size);
         if (result < 1)
         {
-            return result;
+            return current;
         }
         current += result;
         size -= result;
-        if (size == 0)
-        {
-            return  current;
-        }
     }
-    return -1;
+    return current;
 }
-
 size_t _read(int fd, char * buffer, size_t size)
 {
     size_t current = 0;
-    while(current <= size)
+    while (current < size)
     {
         size_t result = read(fd, buffer + current, size);
         if (result < 1)
         {
-            return result;
-        }
-        current += result;
-        size -= result;
-        if (size == 0)
-        {
             return current;
         }
+        current = current + result;
+        size -= current;
     }
-    return -1;
+    return current;
 }
 
 int main (int argc, char ** argv)
@@ -59,38 +50,35 @@ int main (int argc, char ** argv)
     char c;
     size_t i, trim_flag = 0, count = 0, buffer_result = 0, flag = 1;
     char * new_line = "\n";
-    while((buffer_result += _read(0, buffer + count, k + 1 - count)) > 0)
+    while(1)
     {
-        while (buffer[0] == '\n')
+        buffer_result = _read(0, buffer + count, k + 1 - count);
+        if (buffer_result < 1)
         {
-            buffer_result--;
-            memmove(buffer, buffer + 1, buffer_result);
-            trim_flag = 1;
+            break;
         }
-        if (buffer_result < k + 1 && trim_flag)
+        /* while (buffer[0] == '\n') */
+        /* { */
+        /*     buffer_result--; */
+        /*     memmove(buffer, buffer + 1, buffer_result); */
+        /*     trim_flag = 1; */
+        /* } */
+        /* if (trim_flag) */
+        /* { */
+        /*     trim_flag = 0; */
+        /*     if (buffer_result == 0) */
+        /*     { */
+        /*         count = 0; */
+        /*         continue; */
+        /*     } */
+        /*     count =  k + 1 - buffer_result; */
+        /*     continue; */
+        /* } */
+        buffer_result += count;
+        while (count < buffer_result)
         {
-            count =  k + 1 - buffer_result;
-            trim_flag = 0;
-            continue;
-        }
-        while(count < buffer_result)
-        {
-            while (count < buffer_result)
-            {
-                c = buffer[count];
-                if (c == '\n')
-                {
-                    break;
-                }
-                count++;
-            }
-            if (count == buffer_result)
-            {
-                flag = 1;
-                count = 0;
-                break;
-            }
-            if (count <= k)
+            c = buffer[count];
+            if (c == '\n')
             {
                 if (flag)
                 {
@@ -103,17 +91,20 @@ int main (int argc, char ** argv)
                 {
                     flag = 1;
                 }
-                count++;
-                memmove(buffer, buffer + count, buffer_result - count);
+                ++count;
                 buffer_result -= count;
+                memmove(buffer, buffer + count, buffer_result);
                 count = 0;
             }
             else
             {
-                count = 0;
-                buffer_result = 0;
-                flag = 0;
+                ++count;
             }
+        }
+        if (count == k + 1)
+        {
+            flag = 0;
+            count = 0;
         }
     }
     if (count <= k && flag && count)
