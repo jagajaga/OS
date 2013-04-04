@@ -48,7 +48,7 @@ int main (int argc, char ** argv)
     int k = get_int(argv[1]);
     char * buffer  = malloc(k + 1);
     char c;
-    size_t i, trim_flag = 0, count = 0, buffer_result = 0, flag = 1;
+    size_t count = 0, buffer_result = 0, flag = 1;
     char * new_line = "\n";
     while(1)
     {
