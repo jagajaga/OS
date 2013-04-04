@@ -57,23 +57,6 @@ int main (int argc, char ** argv)
         {
             break;
         }
-        /* while (buffer[0] == '\n') */
-        /* { */
-        /*     buffer_result--; */
-        /*     memmove(buffer, buffer + 1, buffer_result); */
-        /*     trim_flag = 1; */
-        /* } */
-        /* if (trim_flag) */
-        /* { */
-        /*     trim_flag = 0; */
-        /*     if (buffer_result == 0) */
-        /*     { */
-        /*         count = 0; */
-        /*         continue; */
-        /*     } */
-        /*     count =  k + 1 - buffer_result; */
-        /*     continue; */
-        /* } */
         buffer_result += count;
         while (count < buffer_result)
         {
