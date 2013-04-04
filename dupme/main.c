@@ -37,7 +37,7 @@ size_t _read(int fd, char * buffer, size_t size)
         {
             return current;
         }
-        current = current + result;
+        current += result;
         size -= current;
     }
     return current;
