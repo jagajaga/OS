@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ "$#" == 0 ]; then
+	echo -e "Usage:\nrenamer \${regexp for files to be ranamed}"
+fi
+
+for name in "$@"; do
+    echo -ne $name'\nNew name: '
+    read -e new_name
+    if [ "$new_name" ]; then
+        mv "$name" "$new_name"
+    fi
+done
