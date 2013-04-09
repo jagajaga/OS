@@ -1,0 +1,25 @@
+#!/bin/bash
+
+if [ "$#" == 0 ]; then
+	echo -e "Usage:\nwatchthis \${seconds} \${process}"
+fi
+
+args=("$@")
+timer=${args[0]}
+process=""
+for ((i=1; i < $#; i++)) {
+	   process+="${args[$i]}"
+	   process+=" "
+}
+
+before=`$process`
+after=`ls`
+
+while true; do
+	sleep $timer
+	after=`$process`
+	show="$( diff -u <(echo "$before") <(echo "$after") )"
+	if [ "$show" ]; then
+		echo "$show"
+	fi
+done
