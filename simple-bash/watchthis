@@ -13,7 +13,6 @@ for ((i=1; i < $#; i++)) {
 }
 
 before=`$process`
-after=`ls`
 
 while true; do
 	sleep $timer
