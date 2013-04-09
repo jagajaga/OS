@@ -21,4 +21,5 @@ while true; do
 	if [ "$show" ]; then
 		echo "$show"
 	fi
+	before="$after"
 done
