@@ -9,8 +9,8 @@ brokensymlinks() {
         if [ -d "$name" ]; then
             brokensymlinks "$name"/*
         fi
-		if [[ ! -e "$name"  && -L "$name" ]]; then
-			echo ${name}
+	if [[ ! -e "$name"  && -L "$name" ]]; then
+	    echo ${name}
         fi
     done
 }
