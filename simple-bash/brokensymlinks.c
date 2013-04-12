@@ -1,10 +1,6 @@
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <dirent.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 
 int get_int(char * c)
 {
@@ -44,15 +40,14 @@ void brokensymlinks(char * name)
             {
                 continue;
             }
-            memcpy(buf + len, file->d_name,
-                   sizeof(char) * (strlen(file->d_name) + 1));
+            memcpy(buf + len, file->d_name, sizeof(char) * (strlen(file->d_name) + 1));
             if (file->d_type == DT_DIR)
             {
                 brokensymlinks(buf);
             }
             if ((access(buf, F_OK) == -1) && (file->d_type == DT_LNK))
             {
-                printf("%s\n", buf);
+		printf("%s\n", buf);
             }
 	    buf[len] = 0;
         }
@@ -64,7 +59,6 @@ void brokensymlinks(char * name)
 int main(int argc, char ** argv)
 {
     char * path = argv[1];
-    printf("%s", path);
     brokensymlinks(path);
     return 0;
 }

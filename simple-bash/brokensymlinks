@@ -6,10 +6,10 @@ fi
 
 brokensymlinks() {
     for name in "$@"; do
-        if [ -d "$name" ]; then
+        if [[ -d "$name" && ! -L "$name" ]]; then
             brokensymlinks "$name"/*
         fi
-	if [[ ! -e "$name"  && -L "$name" ]]; then
+		if [[ ! -e "$name"  && -L "$name" ]]; then
 	    echo ${name}
         fi
     done
