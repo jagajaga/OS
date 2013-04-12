@@ -154,11 +154,6 @@ int main(int argc, char ** argv)
         }
         break;
     }
-    /* int i;  */
-    /* for (i = 0; i < argc - optind + 2; ++i) { */
-    /*     free(command[i]); */
-    /* } */
-    /* free(command); */
     free(buffer);
     return 0;
 }
