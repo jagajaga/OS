@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if ! [ "$2" ]; then
+    exit 1
+fi
+
 if test $(find "$2" -mtime +$1)
 then
 	exit 0
