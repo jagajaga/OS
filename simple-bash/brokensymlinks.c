@@ -47,9 +47,9 @@ void brokensymlinks(char * name)
             }
             if ((access(buf, F_OK) == -1) && (file->d_type == DT_LNK))
             {
-		printf("%s\n", buf);
+                printf("%s\n", buf);
             }
-	    buf[len] = 0;
+            buf[len] = 0;
         }
         closedir(d);
     }
