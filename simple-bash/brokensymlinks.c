@@ -20,30 +20,45 @@ int get_int(char * c)
 void brokensymlinks(char * name)
 {
     DIR * d;
-    struct dirent * dir;
+    struct dirent * file;
     struct stat sbuf;
     if (name == ".")
     {
         return;
     }
     d = opendir(name);
+    size_t len = strlen(name);
+    char * buf = malloc(len + 300);
+    memcpy(buf, name, sizeof(char) * (len + 1));
+    if (buf[len - 1] != '/')
+    {
+        buf[len] = '/';
+        len++;
+        buf[len] = 0;
+    }
     if (d)
     {
-        while ((dir = readdir(d)) != NULL)
+        while ((file = readdir(d)) != NULL)
         {
-            printf("%s\n", dir->d_name);
-            lstat(dir->d_name, &sbuf);
-            if (S_ISDIR(sbuf.st_mode))
+            if (!strcmp(file->d_name, ".") || !strcmp(file->d_name, ".."))
             {
-                brokensymlinks(dir->d_name);
+                continue;
             }
-            if (access(dir->d_name, F_OK) && S_ISLNK(sbuf.st_mode))
+            memcpy(buf + len, file->d_name,
+                   sizeof(char) * (strlen(file->d_name) + 1));
+            if (file->d_type == DT_DIR)
             {
-                printf("%s\n", dir->d_name);
+                brokensymlinks(buf);
             }
+            if ((access(buf, F_OK) == -1) && (file->d_type == DT_LNK))
+            {
+                printf("%s\n", buf);
+            }
+	    buf[len] = 0;
         }
         closedir(d);
     }
+    free(buf);
 }
 
 int main(int argc, char ** argv)
