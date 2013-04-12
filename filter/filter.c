@@ -65,7 +65,7 @@ void run_command(char ** command, char * buffer, int from, int size, char separa
             if (WIFEXITED(child_status) && !WEXITSTATUS(child_status))
             {
                 _write(1, buffer + from, size);
-		_write(1, &separator, 1);
+                _write(1, &separator, 1);
             }
         } while (tpid != pid);
     }
@@ -132,12 +132,10 @@ int main(int argc, char ** argv)
             while ((pos = find_separator(separator, buffer, from, count - from)) >= 0)
             {
                 char ** temp_command = command;
-		int i;
-		char * temp_name = malloc(pos);
-		memcpy(temp_name, buffer, pos);
+                char * temp_name = malloc(pos);
+                memcpy(temp_name, buffer, pos);
                 temp_command[argc - optind] = temp_name;
                 run_command(temp_command, buffer, 0, pos, separator);
-		free(temp_name);
                 memmove(buffer, buffer + (++pos), count - pos);
                 from = 0;
                 count -= pos;
@@ -156,7 +154,11 @@ int main(int argc, char ** argv)
         }
         break;
     }
-    free(command);
+    /* int i;  */
+    /* for (i = 0; i < argc - optind + 2; ++i) { */
+    /*     free(command[i]); */
+    /* } */
+    /* free(command); */
     free(buffer);
     return 0;
 }
