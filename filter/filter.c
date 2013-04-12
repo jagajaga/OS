@@ -136,10 +136,8 @@ int main(int argc, char ** argv)
 		char * temp_name = malloc(pos);
 		memcpy(temp_name, buffer, pos);
                 temp_command[argc - optind] = temp_name;
-                /* for (i = 0; i < argc - optind + 2; i++) */
-                /*     printf("%s ", temp_command[i]); */
-		/* printf("\n"); */
                 run_command(temp_command, buffer, 0, pos, separator);
+		free(temp_name);
                 memmove(buffer, buffer + (++pos), count - pos);
                 from = 0;
                 count -= pos;
@@ -158,6 +156,7 @@ int main(int argc, char ** argv)
         }
         break;
     }
+    free(command);
     free(buffer);
     return 0;
 }
