@@ -108,7 +108,7 @@ int main(int argc, char ** argv)
         {
             command[i - optind] = argv[i];
         }
-        command[argc - optind + 2] = 0;
+        command[argc - optind + 1] = 0;
     }
     buffer = malloc(buffer_size);
     while (1)
