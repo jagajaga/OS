@@ -17,7 +17,6 @@ void brokensymlinks(char * name)
 {
     DIR * d;
     struct dirent * file;
-    struct stat sbuf;
     if (name == ".")
     {
         return;
@@ -58,7 +57,12 @@ void brokensymlinks(char * name)
 
 int main(int argc, char ** argv)
 {
-    char * path = argv[1];
-    brokensymlinks(path);
+    char * path;
+    int i;
+    for (i = 1; i < argc; i++)
+    {
+        path = argv[i];
+        brokensymlinks(path);
+    }
     return 0;
 }
