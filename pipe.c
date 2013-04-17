@@ -1,8 +1,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-char ** path[2];
-path[0] = "";
 
 void _write(int to, char * what, size_t size)
 {
@@ -35,7 +33,7 @@ int main (int argc, char * argv[])
         dup2(pipefd[0], 0);
         close(pipefd[0]);
         close(pipefd[1]);
-        execl("/usr/bin/grep", "grep", "file", NULL);
+        execl("/usr/bin/grep", "grep", "", NULL);
     }
     return 0;
 }
