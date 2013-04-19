@@ -111,10 +111,10 @@ void run(char ** command, int argc, std::string s)
 {
     std::string str = s;
     command[argc - 1] = &str[0];
-    // for (int i = 0; i < argc + 1; i++)
-    // {
-    //     std::cerr << command[i] << ' ';
-    // }
+    for (int i = 0; i < argc + 1; i++)
+    {
+        std::cerr << command[i] << ' ';
+    }
     int pid = fork();
     int child_status;
     if (pid)
@@ -172,9 +172,15 @@ int main(int argc, char ** argv)
 {
     run_command rc(argc, argv);
     rc.run_from_stream();
+    std::cerr << "testtttt";
     rc.run_from_stream();
+    std::cerr << "testtttt";
     rc.run_from_stream();
+    std::cerr << "testtttt";
     rc.run_from_stream();
+    std::cerr << "testtttt";
     rc.run_from_stream();
+    std::cerr << "testtttt";
     rc.run_from_stream();
+    std::cerr << "testtttt";
 }
