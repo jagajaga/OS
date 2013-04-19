@@ -1,4 +1,4 @@
 OS
 ==
 
-Some tast for operating systems lessons
+Some tasks for operating systems lessons
