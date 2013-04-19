@@ -124,7 +124,6 @@ public:
 
 boost::optional<std::string> streammerge::get_string()
 {
-    boost::optional<std::string> temp;
     current_fd = !current_fd;
     if (current_fd)
     {
