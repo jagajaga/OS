@@ -40,33 +40,25 @@ int find_delimiter(char delimiter, char * buffer, int size)
     return -1;
 }
 
-
-
-class streammerge
+class stream
 {
 private:
-    int fd1, fd2;
-    bool current_fd;
+    int fd;
+    int count;
+    char * buffer;
     char delimiter;
-    char * buffer1;
-    char * buffer2;
-    int count1;
-    int count2;
     static const int buffer_size = 4096;
-    boost::optional<std::string> get_string_at_pos(char *, int, int, int, int);
+    boost::optional<std::string> get_string_at_pos(int, int, int);
 public:
-    streammerge(int fd1, int fd2, char delimiter) : fd1(fd1), fd2(fd2), current_fd(0), delimiter(delimiter), buffer1((char *) malloc(buffer_size)), buffer2((char *) malloc(buffer_size)), count1(0), count2(0) {}
-
+    stream(int fd, char delimiter) : fd(fd), count(0), buffer((char*) malloc(buffer_size)), delimiter(delimiter){}
     boost::optional<std::string> get_string();
-
-    ~streammerge()
+    ~stream()
         {
-            free(buffer1);
-            free(buffer2);
-        };
+            free(buffer);
+        }
 };
 
-boost::optional<std::string> streammerge::get_string_at_pos(char * buffer, int pos, int from, int count, int size)
+boost::optional<std::string> stream::get_string_at_pos(int pos, int from, int size)
 {
     if ((pos = find_delimiter(delimiter, buffer, size)) >= 0)
     {
@@ -80,80 +72,67 @@ boost::optional<std::string> streammerge::get_string_at_pos(char * buffer, int p
         memmove(buffer, buffer + pos, count - pos);
         from = 0;
         count -= pos;
-        if(!current_fd)
-        {
-            count2 = count;
-        }
-        else
-        {
-            count1 = count;
-        }
         return std::string(temp_name);
     }
     return boost::none;
 }
 
-boost::optional<std::string> streammerge::get_string()
+boost::optional<std::string> stream::get_string()
 {
     char c;
     int buffer_result;
     int eof = 0;
-    int count = 0;
     while(!eof)
     {
-        char * buffer;
-        if (current_fd)
-        {
-            count = count2;
-            buffer = buffer2;
-            buffer_result = read(fd2, buffer + count, buffer_size - count);
-        }
-        else
-        {
-            count = count1;
-            buffer = buffer1;
-            buffer_result = read(fd1, buffer + count, buffer_size - count);
-        }
+        buffer_result = read(fd, buffer + count, buffer_size - count);
         if (count >= buffer_size)
         {
             return boost::none;
         }
-        current_fd = !current_fd;
         int from = count;
         count += buffer_result;
         int pos;
         if (buffer_result == 0)
         {
-            return get_string_at_pos(buffer, pos, from, count, count);
+            return get_string_at_pos(pos, from, count);
             eof = 1;
         }
         if (buffer_result < 0)
         {
             break;
         }
-        return get_string_at_pos(buffer, pos, from, count, count - from);
-        // if ((pos = find_delimiter(delimiter, buffer, count - from)) >= 0)
-        // {
-        //     char * temp_name = (char *) malloc(pos);
-        //     memcpy(temp_name, buffer, pos);
-        //     pos++;
-        //     if (count - pos < 0)
-        //     {
-        //         break;
-        //     }
-        //     memmove(buffer, buffer + pos, count - pos);
-        //     from = 0;
-        //     count -= pos;
-        //     if(!current_fd)
-        //     {
-        //         count2 = count;
-        //     }
-        //     else
-        //     {
-        //         count1 = count;
-        //     }
-        //     return std::string(temp_name);
-        // }
+        return get_string_at_pos(pos, from, count - from);
+    }
+    return boost::none;
+}
+
+class streammerge
+{
+private:
+    bool current_fd;
+    char delimiter;
+    stream s1, s2;
+public:
+    streammerge(int fd1, int fd2, char delimiter) : current_fd(1), delimiter(delimiter), s1(fd1, delimiter), s2(fd2, delimiter) {}
+
+    boost::optional<std::string> get_string();
+
+    ~streammerge()
+        {
+        };
+};
+
+boost::optional<std::string> streammerge::get_string()
+{
+    boost::optional<std::string> temp;
+    current_fd = !current_fd;
+    if (current_fd)
+    {
+        return s2.get_string();
+    }
+    else
+    {
+        return s1.get_string();
     }
     return boost::none;
 }
