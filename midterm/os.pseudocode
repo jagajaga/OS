@@ -69,82 +69,58 @@ Context = record
 kernel()
 {
     runnable = List<Process>
-    waiting = Map<Process, Int>
+    waiting = Map<Process, SyscallTag>
 
-	white_pages = List<Ptr>
-	black_pages = List<Ptr>
+    white_pages = List<Ptr>
+    black_pages = List<Ptr>
 
-	associated_map = Map <Prt, DiskBlockId>
-	waiting_for_deassociate_map = Map <Prt, DiskBlockId>
+    associated_map = Map <Prt, DiskBlockId>
+    waiting_for_deassociate_map = Map <Prt, DiskBlockId>
+
+    allocating_map = Map <Pid, Ptr>
 
     while true
     {
-		current_process = runnable.head()
-		context = current_process.exec()
-		allocator = allocator(current_process.hd.mmu)
-		disk = driver.get_disk()
-		switch context.tag
-		{
-			case fork_tag:
-				pid = new_pid()
-				runnable.add(Process(pid, context.cont(0), ...))
-				runnable.add(Process(current_process.pid, context.cont(pid), ...))
-				break
-			case exit_tag:
-				return
-			case alloc_ram_pages_tag:
-				k = context.argv[0]
-				if (allocator.get_free_ram() <= k)
-				{
-					ptr = allocator.allocate(k)
-					white_pages.add(ptr);
-					runnable.add(Process(..., context.cont(ptr))
-					break
-				}
-				else
-				{
-					next = true
-					for (page : white_pages)
-					{
-						if (page.get_size() >= k)
-						{
-							white_pages.remove(page)
-							allocator.release(page)
-							ptr = allocator.allocate(k)
-							white_pages.add(ptr)
-							runnable.add(Process(..., context.cont(ptr))
-							break
-						}
-						next = false
-					}
-					if (!next)
-						break
-					for (page : black_pages)
-					{
-						if (page.get_size() >= k)
-						{
-							black_pages.remove(page)
-							allocator.release(page)
-							ptr = allocator.allocate(k)
-							white_pages.add(ptr)
-							runnable.add(Process(..., context.cont(ptr))
-							break
-						}
-						next = false
-					}
-					if (!next)
-						break
-					//TODO do smth if no memory
-				}
-			case alloc_disk_pages_tag:
-				k = context.argv[0]
-				id = disk.allocate_block(k)
-				runnable.add(Process(..., context.cont(id))
-				break
-			case read_block_tag:
-			case write_block_tag:
-			case associate:
-			case deassociate:
-		}
+	current_process = runnable.head()
+	context = current_process.exec()
+	allocator = allocator(current_process.hd.mmu)
+	disk = driver.get_disk()
+	switch context.tag
+	{
+		case fork_tag:
+			pid = new_pid()
+			runnable.add(Process(pid, context.cont(0), ...))
+			runnable.add(Process(current_process.pid, context.cont(pid), ...))
+			break
+		case exit_tag:
+			return
+		case alloc_ram_pages_tag:
+			k = context.argv[0]
+			if (allocator.get_free_ram() <= k)
+			{
+			    allocator.allocate(k, current_process.pid) // (size, pid)
+			    //after if allocates memory it will add process to runnable with alloc_ram_done syscall tag and add to allocating_map new entry with ptr
+			    break
+			}
+			else
+			{
+			    new_k_size = k - allocator.get_free_ram()
+			    allocator.allocate(new_k_size, pid)
+			}
+		case alloc_ram_done:
+		    ptr = allocating_map[current_process.pid]
+		    white_pages.add(ptr);
+		    runnable.add(Process(..., context.cont(ptr))
+		    allocating_map.remove_entry(current_process.pid)
+		case alloc_disk_pages_tag:
+			k = context.argv[0]
+			id = disk.allocate_block(k)
+			runnable.add(Process(..., context.cont(id))
+			break
+		case read_block_tag:
+		case write_block_tag:
+		case associate:
+		case deassociate:
+	}
     }
 }
