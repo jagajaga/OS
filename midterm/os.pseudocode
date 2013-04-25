@@ -75,14 +75,14 @@ kernel()
 	black_pages = List<Ptr>
 
 	associated_map = Map <Prt, DiskBlockId>
-
+	waiting_for_deassociate_map = Map <Prt, DiskBlockId>
 
     while true
     {
 		current_process = runnable.head()
 		context = current_process.exec()
 		allocator = allocator(current_process.hd.mmu)
-		disk = driver.get_disk_by_name(root)
+		disk = driver.get_disk()
 		switch context.tag
 		{
 			case fork_tag:
@@ -103,6 +103,7 @@ kernel()
 				}
 				else
 				{
+					next = true
 					for (page : white_pages)
 					{
 						if (page.get_size() >= k)
@@ -114,7 +115,10 @@ kernel()
 							runnable.add(Process(..., context.cont(ptr))
 							break
 						}
+						next = false
 					}
+					if (!next)
+						break
 					for (page : black_pages)
 					{
 						if (page.get_size() >= k)
@@ -126,12 +130,17 @@ kernel()
 							runnable.add(Process(..., context.cont(ptr))
 							break
 						}
+						next = false
 					}
+					if (!next)
+						break
 					//TODO do smth if no memory
 				}
 			case alloc_disk_pages_tag:
 				k = context.argv[0]
-
+				id = disk.allocate_block(k)
+				runnable.add(Process(..., context.cont(id))
+				break
 			case read_block_tag:
 			case write_block_tag:
 			case associate:
