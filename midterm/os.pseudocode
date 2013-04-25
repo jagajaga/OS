@@ -150,6 +150,7 @@ kernel()
 			case alloc_disk_donт:
 				cur_proc = disk_activity_map[current_process]
 				waiting_for_allocation.remove(cur_proc)
+				runnable.add(Process(cur_proc, ..., context.cont(disk_pages[cur_proc].last()))
 				break
 			case alloc_disk_pages_tag:
 				k = context.argv[0]
