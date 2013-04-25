@@ -1,0 +1,141 @@
+Process = r ~> Context
+
+ProcessInfo = record
+{ pid : Int 
+    ruid : Int 
+    rgid : Int 
+    euid : Int
+    egid : Int 
+    ppid : Int 
+    gids : [Int] 
+    pwd : Path 
+    namespace : Map<Path, Inode*> 
+    fdTable : Map<int, FdId> 
+}
+
+FdId = record
+{
+    fdInfo : FdInfo
+    data : Ptr 
+}
+
+FdInfo = record
+{
+    flags: Set 
+    SeekPos: VeryLongInt
+}
+
+Inode = record
+{ 
+    type: File | Dir 
+    atime : datetime 
+    mtime : datetime 
+    modes : Int 
+    owner : Int
+    group : Int
+    data: IDataType* 
+}
+
+Registers = record
+{
+    hr0
+    hr1
+    hr2 
+    hr3
+    .....
+}
+
+HD = record
+{
+    mmu: PointerTable 
+    registers: Registers 
+}
+
+r~> Context = record
+{
+    ret: *r 
+    processInfo: ProcessInfo
+    kas: *HD 
+}
+
+Context = record
+{
+    tag: SyscallTag 
+    Argv: Arg tag 
+    Cont: Process(Ret tag) 
+}
+//copyright Dmitry Bobrov
+
+kernel()
+{
+    runnable = List<Process>
+    waiting = Map<Process, Int>
+
+	white_pages = List<Ptr>
+	black_pages = List<Ptr>
+
+	associated_map = Map <Prt, DiskBlockId>
+
+
+    while true
+    {
+		current_process = runnable.head()
+		context = current_process.exec()
+		allocator = allocator(current_process.hd.mmu)
+		disk = driver.get_disk_by_name(root)
+		switch context.tag
+		{
+			case fork_tag:
+				pid = new_pid()
+				runnable.add(Process(pid, context.cont(0), ...))
+				runnable.add(Process(current_process.pid, context.cont(pid), ...))
+				break
+			case exit_tag:
+				return
+			case alloc_ram_pages_tag:
+				k = context.argv[0]
+				if (allocator.get_free_ram() <= k)
+				{
+					ptr = allocator.allocate(k)
+					white_pages.add(ptr);
+					runnable.add(Process(..., context.cont(ptr))
+					break
+				}
+				else
+				{
+					for (page : white_pages)
+					{
+						if (page.get_size() >= k)
+						{
+							white_pages.remove(page)
+							allocator.release(page)
+							ptr = allocator.allocate(k)
+							white_pages.add(ptr)
+							runnable.add(Process(..., context.cont(ptr))
+							break
+						}
+					}
+					for (page : black_pages)
+					{
+						if (page.get_size() >= k)
+						{
+							black_pages.remove(page)
+							allocator.release(page)
+							ptr = allocator.allocate(k)
+							white_pages.add(ptr)
+							runnable.add(Process(..., context.cont(ptr))
+							break
+						}
+					}
+					//TODO do smth if no memory
+				}
+			case alloc_disk_pages_tag:
+				k = context.argv[0]
+
+			case read_block_tag:
+			case write_block_tag:
+			case associate:
+			case deassociate:
+		}
+    }
+}
