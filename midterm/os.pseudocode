@@ -68,6 +68,7 @@ Context = record
 
 kernel()
 {
+	timer : Timer
     runnable = List<Process>
     waiting = Map<Process, SyscallTag>
 
@@ -77,6 +78,8 @@ kernel()
 
 	disk_activity_map = Map <Process, Process>
     waiting_for_allocation = List<Process>
+	waiting_read = List<Process>
+	waiting_write = List<Process>
 
     associated_map = Map <Prt, DiskBlockId>
     waiting_for_deassociate_map = Map <Prt, DiskBlockId>
@@ -91,6 +94,10 @@ kernel()
 		disk = driver.get_disk()
 		switch context.tag
 		{
+			case timer_set_tag:
+				timer.set_time(k)
+			case timer_alarm_tag:
+				
 			case fork_tag:
 				pid = new_pid()
 				runnable.add(Process(pid, context.cont(0), ...))
@@ -143,23 +150,51 @@ kernel()
 					}
 					if (!next)
 					 break
-					disk.add_page(k, current_process) // it will add new ptr to disk_pages map and in disk_activity_map will be record like (current process) and (process of disk job)
+					disk.add_page(k, current_process) //it will create new disk job, and after it is done it will create interrupt and in first argument where will be process wich was asking for disk allocaating 
 					waiting_for_allocation.add(current_process)
 					break
 				}
-			case alloc_disk_donт:
-				cur_proc = disk_activity_map[current_process]
+			case alloc_disk_done:
+				cur_proc = context.argv[0]
 				waiting_for_allocation.remove(cur_proc)
 				runnable.add(Process(cur_proc, ..., context.cont(disk_pages[cur_proc].last()))
+				runnale.add(current_process)
 				break
 			case alloc_disk_pages_tag:
 				k = context.argv[0]
 				disk.add_page(k, current_process) 
 				waiting_for_allocation.add(current_process)
 				break
+			case read_block_done:
+				cur_proc = context.argv[0]
+				count = disk.get_cached_read_count(cur_proc)
+				waiting_read.remove(cur_proc)
+				runnable.add(Process(cur_proc, ..., context.cont(count))
+				runnale.add(current_process)
+				break
+			case write_block_done:
+				cur_proc = context.argv[0]
+				count = disk.get_cached_read_count(cur_proc)
+				waiting_write.remove(cur_proc)
+				runnable.add(Process(cur_proc, ..., context.cont(count))
+				runnale.add(current_process)
+				break
 			case read_block_tag:
+				fd = current_process.fdTable[context.argv[0]]
+				buffer = context.argv[1]
+				size = context.argv[2]
+				disk.read_block(fd, buffer, size, current_process) //same logic as add_page
+				break
 			case write_block_tag:
+				fd = current_process.fdTable[context.argv[0]]
+				buffer = context.argv[1]
+				size = context.argv[2]
+				disk.write_block(fd, buffer, size, current_process) //same logic as add_page
+				break
 			case associate:
+				ptr = context.argv[0]
+				k = context.argv[1]
+				//TODO	
 			case deassociate:
 		}
     }
