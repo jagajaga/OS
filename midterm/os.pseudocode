@@ -80,9 +80,10 @@ kernel()
     waiting_for_allocation = List<Process>
 	waiting_read = List<Process>
 	waiting_write = List<Process>
+	waiting_associate = List<Process>
 
     associated_map = Map <Prt, DiskBlockId>
-    waiting_for_deassociate_map = Map <Prt, DiskBlockId>
+    waiting_for_deassociate = List <Prt>
 
     allocating_map = Map <Process, Ptr>
 
@@ -168,7 +169,7 @@ kernel()
 				break
 			case write_block_done_interrupt:
 				was_proc = context.argv[0]
-				count = disk.get_cached_read_count(was_proc)
+				count = disk.get_cached_write_count(was_proc)
 				waiting_write.remove(was_proc)
 				runnable.add(Process(was_proc, ..., context.cont(count))
 				runnale.add(current_process)
@@ -178,12 +179,14 @@ kernel()
 				buffer = context.argv[1]
 				size = context.argv[2]
 				disk.read_block(fd, buffer, size, current_process) //same logic as add_page
+				waiting_read.add(current_process)
 				break
 			case write_block_tag:
 				fd = current_process.fdTable[context.argv[0]]
 				buffer = context.argv[1]
 				size = context.argv[2]
 				disk.write_block(fd, buffer, size, current_process) //same logic as add_page
+				waiting_write.add(current_process)
 				break
 			case page_read_interrupt:
 				page = context.argv[0]
@@ -209,11 +212,25 @@ kernel()
 				}
 				runnable.add(Process(..., context.cont(exit)))
 				break
+			case associate_done_interrupt:
+				was_proc = context.argv[0]
+				ptr = context.argv[1]
+				diskBlockId = disk.get_cached_diskBlockId(was_proc)
+				associated_map[allocator.get_prt(ptr)] = diskBlockId
+				waiting_associate.remove(was_proc)
+				runnable.add(Process(was_proc, ..., context.cont(diskBlockId))
+				runnale.add(current_process)
+				break
 			case associate:
 				ptr = context.argv[0]
-				k = context.argv[1]
-				//TODO	
+				diskBlockId = context.argv[1]
+				disk.associate(ptr, DiskBlockId, current_process)
+				waiting_associate.add(current_process)
+				break
 			case deassociate:
+				ptr = context.argv[0]
+				waiting_for_deassociate.add(associated_map[ptr])
+				/todo
 		}
     }
 }
