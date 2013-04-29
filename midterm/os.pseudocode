@@ -230,7 +230,8 @@ kernel()
 			case deassociate:
 				ptr = context.argv[0]
 				waiting_for_deassociate.add(associated_map[ptr])
-				/todo
+				break
+				//todo
 		}
     }
 }
