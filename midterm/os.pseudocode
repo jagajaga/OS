@@ -95,8 +95,15 @@ kernel()
 		disk = driver.get_disk()
 		switch context.tag
 		{
-			case timer_alarm_tag:
-				
+			case timer_alarm_interrupt:
+				for(ptr : black_pages)
+					if (associated_map.contains(ptr))
+					{
+						DiskBlockId = associated_map[ptr]
+						disk.associate(ptr, DiskBlockId, current_process)
+					}
+				runnable.add(..., context.cont())
+				break
 			case fork_tag:
 				pid = new_pid()
 				runnable.add(Process(pid, context.cont(0), ...))
@@ -152,8 +159,8 @@ kernel()
 				ptr = context.argv[1]
 				disk_pages[was_proc].add(ptr)
 				waiting_for_allocation.remove(was_proc)
-				runnable.add(Process(was_proc, ..., context.cont(ptr))
-				runnable.add(current_process)
+				runnable.add(Process(was_proc, ..., was_proc.ccontext.cont(ptr))
+				runnable.add(..., context.cont())
 				break
 			case alloc_disk_pages_tag:
 				k = context.argv[0]
@@ -164,15 +171,15 @@ kernel()
 				was_proc = context.argv[0]
 				count = disk.get_cached_read_count(was_proc)
 				waiting_read.remove(was_proc)
-				runnable.add(Process(was_proc, ..., context.cont(count))
-				runnale.add(current_process)
+				runnable.add(Process(was_proc, ..., was_proc.context.cont(count))
+				runnable.add(..., context.cont())
 				break
 			case write_block_done_interrupt:
 				was_proc = context.argv[0]
 				count = disk.get_cached_write_count(was_proc)
 				waiting_write.remove(was_proc)
-				runnable.add(Process(was_proc, ..., context.cont(count))
-				runnale.add(current_process)
+				runnable.add(Process(was_proc, ..., was_proc.context.cont(count))
+				runnable.add(..., context.cont())
 				break
 			case read_block_tag:
 				fd = current_process.fdTable[context.argv[0]]
@@ -218,8 +225,8 @@ kernel()
 				diskBlockId = disk.get_cached_diskBlockId(was_proc)
 				associated_map[allocator.get_prt(ptr)] = diskBlockId
 				waiting_associate.remove(was_proc)
-				runnable.add(Process(was_proc, ..., context.cont(diskBlockId))
-				runnale.add(current_process)
+				runnable.add(Process(was_proc, ..., was_proc.context.cont(diskBlockId))
+				runnable.add(..., context.cont())
 				break
 			case associate:
 				ptr = context.argv[0]
@@ -231,7 +238,6 @@ kernel()
 				ptr = context.argv[0]
 				waiting_for_deassociate.add(associated_map[ptr])
 				break
-				//todo
 		}
     }
 }
