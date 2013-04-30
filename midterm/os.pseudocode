@@ -1,6 +1,6 @@
 kernel()
 {
-	timer : Timer
+    timer : Timer
     runnable = List<Process>
     waiting = Map<Process, SyscallTag>
 
@@ -8,11 +8,11 @@ kernel()
     black_pages = List<Ptr>
     disk_pages = Map <Process, List<DiskBlockId>>
 
-	disk_activity_map = Map <Process, Process>
+    disk_activity_map = Map <Process, Process>
     waiting_for_allocation = List<Process>
-	waiting_read = List<Process>
-	waiting_write = List<Process>
-	waiting_associate = List<Process>
+    waiting_read = List<Process>
+    waiting_write = List<Process>
+    waiting_associate = List<Process>
 
     associated_map = Map <Prt, DiskBlockId>
     waiting_for_deassociate = List <Prt>
