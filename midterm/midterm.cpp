@@ -23,21 +23,6 @@ size_t _write(int fd, char * buffer, size_t size)
     return current;
 }
 
-size_t _read(int fd, char * buffer, size_t size)
-{
-    size_t current = 0;
-    while (current < size)
-    {
-        size_t result = read(fd, buffer + current, size);
-        if (result < 1)
-        {
-            return current;
-        }
-        current += result;
-        size -= current;
-    }
-    return current;
-}
 
 int find_separator(char separator, char * buffer, int size)
 {
@@ -57,7 +42,7 @@ int find_separator(char separator, char * buffer, int size)
 void one_run(std::deque <std::string> & v)
 {
     char ** command = (char **) malloc((v.size() + 1) * (sizeof(char *)));
-    for (int i = 0; i < v.size(); i++)
+    for (int i = 0; (unsigned) i < v.size(); i++)
     {
         command[i] = &v[i][0];
     }
@@ -137,8 +122,7 @@ void split(const std::string & txt, std::deque<std::string> & strs, char ch)
         initial_pos = pos + 1;
         pos = txt.find(ch, initial_pos);
     }
-    // strs.push_back( txt.substr(initial_pos, min(pos, txt.size()) - initial_pos));
-    for (int i = 0; i < strs.size(); i++)
+    for (int i = 0; (unsigned) i < strs.size(); i++)
     {
         if (strs[i][0] == '$')
         {
@@ -153,25 +137,14 @@ void split(const std::string & txt, std::deque<std::string> & strs, char ch)
             strs[i] = tmp_var;
         }
     }
-    // for (int i = 0; i < strs.size(); i++)
-    // {
-    //     if (strs[i] == "" || strs[i] == " ")
-    //     {
-    //         strs.erase(strs.begin() + i);
-    //     }
-    // }
-    // for (int i = 0; i < strs.size(); i++)
-    //     std::cerr << strs[i] << '\n';
 }
 
 int main(int argc, char ** argv)
 {
     char * buffer;
-    char c, separator = '|';
+    char separator = '|';
     int buffer_size = 4096;
     int buffer_result;
-    int count = 0;
-    char ** command;
 
     buffer = (char *) malloc(buffer_size);
     while (1)
