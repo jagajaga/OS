@@ -26,26 +26,6 @@ size_t _write(int fd, char * buffer, size_t size)
     return current;
 }
 
-size_t _read(int fd, char * buffer, size_t size)
-{
-    size_t current = 0;
-
-    while (current < size)
-    {
-        size_t result = read(fd, buffer + current, size);
-
-        if (result < 1)
-        {
-            return current;
-        }
-
-        current += result;
-        size -= current;
-    }
-
-    return current;
-}
-
 int find_separator(char separator, char * buffer, int from, int size)
 {
     int pos = from;
@@ -138,8 +118,7 @@ int main(int argc, char ** argv)
             {
                 return -1;
             }
-			// это снова будет задерживать ввод
-            buffer_result = _read(0, buffer + count, buffer_size - count);
+            buffer_result = read(0, buffer + count, buffer_size - count);
 
             if (buffer_result == 0)
             {
