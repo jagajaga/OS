@@ -6,6 +6,7 @@
 
 void brokensymlinks(char * name)
 {
+    const static int MAX_FILE_NAME_LENGTH = 255;
     DIR * d;
     struct dirent * file;
 	const static char point = '.';
@@ -15,7 +16,7 @@ void brokensymlinks(char * name)
     }
     d = opendir(name);
     size_t len = strlen(name);
-    char * buf = malloc(len + 256); // АД! - Я не понимаю почему :(
+    char * buf = malloc(len + MAX_FILE_NAME_LENGTH + 1); 
     memcpy(buf, name, len + 1);
     if (buf[len - 1] != '/')
     {
