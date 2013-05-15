@@ -1,30 +1,22 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <dirent.h>
-
-int get_int(char * c)
-{
-    int result = 0;
-    int i = 0;
-    for (i = 0; c[i] != 0; i++)
-    {
-        result = (result * 10) + (int) (c[i] - '0');
-    }
-    return result;
-}
+#include <string.h>
+#include <stdio.h>
 
 void brokensymlinks(char * name)
 {
     DIR * d;
     struct dirent * file;
-    if (name == ".")
+	const static char point = '.';
+    if (name == &point)
     {
         return;
     }
     d = opendir(name);
     size_t len = strlen(name);
-    char * buf = malloc(len + 300);
-    memcpy(buf, name, sizeof(char) * (len + 1));
+    char * buf = malloc(len + 256); // АД! - Я не понимаю почему :(
+    memcpy(buf, name, len + 1);
     if (buf[len - 1] != '/')
     {
         buf[len] = '/';
@@ -39,7 +31,7 @@ void brokensymlinks(char * name)
             {
                 continue;
             }
-            memcpy(buf + len, file->d_name, sizeof(char) * (strlen(file->d_name) + 1));
+            memcpy(buf + len, file->d_name, strlen(file->d_name) + 1);
             if (file->d_type == DT_DIR)
             {
                 brokensymlinks(buf);
