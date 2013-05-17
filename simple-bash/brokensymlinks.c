@@ -3,10 +3,10 @@
 #include <dirent.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 
 void brokensymlinks(char * name)
 {
-    const static int MAX_FILE_NAME_LENGTH = 255;
     DIR * d;
     struct dirent * file;
 	const static char point = '.';
@@ -16,7 +16,15 @@ void brokensymlinks(char * name)
     }
     d = opendir(name);
     size_t len = strlen(name);
-    char * buf = malloc(len + MAX_FILE_NAME_LENGTH + 1); 
+	const int buffer_length = len + NAME_MAX + 1; 
+	if (buffer_length > PATH_MAX)
+	{
+		const static char * long_name = "\nThis name is too long.";
+		write(2, name, strlen(name));
+		write(2, long_name, strlen(long_name));
+		return;
+	}
+    char * buf = malloc(buffer_length); 
     memcpy(buf, name, len + 1);
     if (buf[len - 1] != '/')
     {
