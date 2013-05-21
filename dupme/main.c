@@ -42,6 +42,12 @@ int main (int argc, char ** argv)
 
     int k = atoi(argv[1]);
     char * buffer  = malloc(k + 1);
+
+    if (buffer == NULL)
+    {
+        _exit(2);
+    }
+
     char c;
     size_t count = 0, buffer_result = 0, flag = 1;
     char * new_line = "\n";

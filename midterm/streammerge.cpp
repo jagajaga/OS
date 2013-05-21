@@ -65,9 +65,20 @@ public:
 
 boost::optional<std::string> stream::get_string_at_pos(int pos, int from, int size)
 {
+    if (buffer == NULL)
+    {
+        _exit(2);
+    }
+
     if ((pos = find_delimiter(delimiter, buffer, size)) >= 0)
     {
         char * temp_name = (char *) malloc(pos);
+
+        if (temp_name == NULL)
+        {
+            _exit(2);
+        }
+
         memcpy(temp_name, buffer, pos);
         pos++;
 
@@ -108,6 +119,7 @@ boost::optional<std::string> stream::get_string()
 
         return get_string_at_pos(pos, from, count - from);
     }
+
     return boost::none;
 }
 
@@ -159,7 +171,7 @@ int main(int argc, char ** argv)
     if (file1 == -1 || file2 == -1)
     {
         std::cout << "Couldn't open file \"" << (file1 == 1 ? argv[1] : argv[2]) << "\"";
-		return 2;
+        return 2;
     }
 
     streammerge sm(file1, file2, argv[3][0]);

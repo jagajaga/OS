@@ -95,6 +95,12 @@ int main(int argc, char ** argv)
     if (optind < argc)
     {
         command = malloc((argc - optind + 2) * sizeof(char *));
+
+        if (command == NULL)
+        {
+            _exit(2);
+        }
+
         int i = 0;
 
         for (i = optind; i < argc; i++)
@@ -107,6 +113,11 @@ int main(int argc, char ** argv)
 
     buffer = malloc(buffer_size);
 
+    if (buffer == NULL)
+    {
+        _exit(2);
+    }
+
     while (1)
     {
         int eof = 0;
@@ -118,6 +129,7 @@ int main(int argc, char ** argv)
             {
                 return -1;
             }
+
             buffer_result = read(0, buffer + count, buffer_size - count);
 
             if (buffer_result == 0)
@@ -133,6 +145,12 @@ int main(int argc, char ** argv)
             {
                 char ** temp_command = command;
                 char * temp_name = malloc(pos);
+
+                if (temp_name == NULL)
+                {
+                    _exit(2);
+                }
+
                 memcpy(temp_name, buffer, pos);
                 temp_command[argc - optind] = temp_name;
                 run_command(temp_command, buffer, 0, pos, separator);
