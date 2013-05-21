@@ -6,8 +6,8 @@ fi
 
 for name in "$@"; do
     echo -ne $name'\nNew name: '
-    read -e new_name
+	read -e -i "$(basename "$name")" new_name
     if [ "$new_name" ]; then
-        mv "$name" "$new_name"
+		mv "$name" "$(dirname "$name")/$new_name"
     fi
 done
