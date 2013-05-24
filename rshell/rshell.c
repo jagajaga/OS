@@ -8,6 +8,7 @@
 #include <pty.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #define BUF_SIZE 500
 
@@ -15,7 +16,7 @@ int main (int argc, char ** argv)
 {
     if (!fork())
     {
-		setsid();
+        setsid();
         struct addrinfo hints;
         struct addrinfo * result, *rp;
         int sfd, s;
@@ -84,36 +85,108 @@ int main (int argc, char ** argv)
         }
         else
         {
-            dup2(acceptfd, 0);
-            dup2(acceptfd, 1);
-            dup2(acceptfd, 2);
+            //close(0);
+            //close(1);
+            //close(2);
 
-            if (close(acceptfd) == -1)
-            {
-                fprintf(stderr, "Could not close\n");
-                exit(EXIT_FAILURE);
-            }
+            write(acceptfd, "foo\n", 4);
+//            if (close(acceptfd) == -1)
+//           {
+//               fprintf(stderr, "Could not close\n");
+//               exit(EXIT_FAILURE);
+//           }
 
             int master, slave;
             char buff[4096];
-            openpty(&master, &slave, buff, NULL, NULL);
+
+            if ( openpty(&master, &slave, buff, NULL, NULL) == -1)
+            {
+                fprintf(stderr, "Could not open pty\n");
+                exit(EXIT_FAILURE);
+            }
+
             if (fork())
             {
-                //close(master);
                 close(slave);
-                sleep(100);
+                //close(master);
+                //close(acceptfd);
+				int flags;
+				flags = fcntl(master, F_GETFL);
+				if (flags < 0)
+					exit (1);
+				flags = flags | O_NONBLOCK;
+				fcntl(master, F_SETFL, flags);
+				flags = fcntl(acceptfd, F_GETFL);
+				if (flags < 0)
+					exit (1);
+				flags = flags | O_NONBLOCK;
+				fcntl(acceptfd, F_SETFL, flags);
+                char * buffer = malloc(4096);
+				int read_result_fd;
+
+                while (1)
+                {
+                    read_result_fd = read(master, buffer, 4096);
+
+                    if (read_result_fd == 0)
+                        exit(1);
+					else if (read_result_fd < 0)
+						if (errno != EWOULDBLOCK && errno != EAGAIN)
+							exit(1);
+
+
+                    write(acceptfd, buffer, read_result_fd);
+                    read_result_fd = read(acceptfd, buffer, 4096);
+
+                    if (read_result_fd == 0)
+                        exit(1);
+					else if (read_result_fd < 0)
+						if (errno != EWOULDBLOCK && errno != EAGAIN)
+							exit(1);
+
+                    write(master, buffer, read_result_fd);
+                }
             }
             else
             {
+                //dup2(acceptfd, 0);
+                //dup2(acceptfd, 1);
+                //dup2(acceptfd, 2);
+                dup2(slave, 0);
+                dup2(slave, 1);
+                dup2(slave, 2);
                 close(master);
                 close(slave);
-				setsid();
+                close(acceptfd);
+                setsid();
                 int fd = open(buff,  O_RDWR);
                 close(fd);
                 execl("/bin/zsh", "zsh", NULL);
+                exit(1);
             }
+
+            /*
+                //close(master);
+                close(slave);
+            	while(1)
+            	{
+            //		int read_result_master = read(master, buffer, read_result_fd);
+            //		if (read_result_master == -1)
+            //		{
+            //			fprintf(stderr, "Read error\n");
+            //			close(master);
+            //		}
+            //		write(acceptfd, buffer, read_result_master);
+
+            	}
+            }
+            else
+            {
+            }
+            */
 
         }
     }
+
     return 0;
 }
