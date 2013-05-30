@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <poll.h>
 
 #define BUF_SIZE 500
 
@@ -110,48 +111,118 @@ int main (int argc, char ** argv)
                 close(slave);
                 //close(master);
                 //close(acceptfd);
-				int flags;
-				flags = fcntl(master, F_GETFL);
-				if (flags < 0)
-					exit (1);
-				flags = flags | O_NONBLOCK;
-				fcntl(master, F_SETFL, flags);
-				flags = fcntl(acceptfd, F_GETFL);
-				if (flags < 0)
-					exit (1);
-				flags = flags | O_NONBLOCK;
-				fcntl(acceptfd, F_SETFL, flags);
-                char * buffer = malloc(4096);
-				int read_result_fd;
+                int flags;
+                flags = fcntl(master, F_GETFL);
+
+                if (flags < 0)
+                {
+                    exit (1);
+                }
+
+                flags = flags | O_NONBLOCK;
+                fcntl(master, F_SETFL, flags);
+                flags = fcntl(acceptfd, F_GETFL);
+
+                if (flags < 0)
+                {
+                    exit (1);
+                }
+
+                flags = flags | O_NONBLOCK;
+                fcntl(acceptfd, F_SETFL, flags);
+                char ** buffer = malloc(2 *sizeof(char * ));
+                buffer[0] = malloc(4096);
+                buffer[1] = malloc(4096);
+                int read_result_fd[2];
+                struct pollfd fds[2];
+                //struct pollfd fds_out[2];
+                int timeout_msecs = 500;
+                int ret;
+
+                fds[0].fd = master;
+                fds[0].events = POLLIN | POLLOUT;
+                fds[1].fd = acceptfd;
+                fds[1].events = POLLOUT | POLLIN;
+
+                // fds_out[0].fd = acceptfd;
+                // fds_out[0].events = POLLIN | POLLRDBAND | POLLPRI;
+                // fds_out[1].fd = master;
+                // fds_out[1].events = POLLOUT | POLLWDBAND;
 
                 while (1)
                 {
-                    read_result_fd = read(master, buffer, 4096);
+                    ret = poll(fds, 2, timeout_msecs);
 
-                    if (read_result_fd == 0)
-                        exit(1);
-					else if (read_result_fd < 0)
-						if (errno != EWOULDBLOCK && errno != EAGAIN)
-							exit(1);
+                    if (ret > 0)
+                    {
+                        if (fds[0].revents & POLLIN)
+                        {
+                            read_result_fd[0] = read(fds[0].fd, buffer[0], 4096);
 
+                            if (read_result_fd[0] == 0)
+                            {
+                                free(buffer);
+                                exit(1);
+                            }
+                            else if (read_result_fd[0] < 0)
+                                if (errno != EWOULDBLOCK && errno != EAGAIN)
+                                {
+                                    free(buffer);
+                                    exit(1);
+                                }
+                        }
 
-                    write(acceptfd, buffer, read_result_fd);
-                    read_result_fd = read(acceptfd, buffer, 4096);
+                        if (fds[1].revents & POLLOUT)
+                        {
+                            if (read_result_fd[0] != 0)
+                            {
+                                write(fds[1].fd, buffer[0], read_result_fd[0]);
+                            }
 
-                    if (read_result_fd == 0)
-                        exit(1);
-					else if (read_result_fd < 0)
-						if (errno != EWOULDBLOCK && errno != EAGAIN)
-							exit(1);
+                            read_result_fd[0] = 0;
+                        }
 
-                    write(master, buffer, read_result_fd);
+                        if (fds[1].revents & POLLIN)
+                        {
+                            read_result_fd[1] = read(fds[1].fd, buffer[1], 4096);
+
+                            if (read_result_fd[1] == 0)
+                            {
+                                free(buffer);
+                                exit(1);
+                            }
+                            else if (read_result_fd[1] < 0)
+                                if (errno != EWOULDBLOCK && errno != EAGAIN)
+                                {
+                                    free(buffer);
+                                    exit(1);
+                                }
+                        }
+
+                        if (fds[0].revents & POLLOUT)
+                        {
+                            if (read_result_fd[1] != 0)
+                            {
+                                write(fds[0].fd, buffer[1], read_result_fd[1]);
+                            }
+
+                            read_result_fd[1] = 0;
+                        }
+                    }
+
+                    //  if ( !ret )
+                    //  {
+                    //      write(fds[0].fd, "Timeout!\n", 9);
+                    //      exit(0);
+                    //      free(buffer);
+                    //  }
                 }
+
+                exit(0);
+                free(buffer);
             }
             else
             {
-                //dup2(acceptfd, 0);
-                //dup2(acceptfd, 1);
-                //dup2(acceptfd, 2);
                 dup2(slave, 0);
                 dup2(slave, 1);
                 dup2(slave, 2);
