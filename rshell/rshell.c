@@ -151,6 +151,7 @@ int main (int argc, char ** argv)
 
                 while (1)
                 {
+					sleep(1);
                     ret = poll(fds, 2, timeout_msecs);
 
                     if (ret > 0)
