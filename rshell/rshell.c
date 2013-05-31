@@ -13,6 +13,16 @@
 
 #define BUF_SIZE 500
 
+void my_exit (char ** buffer, int fd, int code)
+{
+
+    close(fd);
+    free(buffer[0]);
+    free(buffer[1]);
+    free(buffer);
+    exit(code);
+}
+
 int main (int argc, char ** argv)
 {
     if (!fork())
@@ -120,13 +130,16 @@ int main (int argc, char ** argv)
                 char ** buffer = malloc(2 *sizeof(char * ));
                 buffer[0] = malloc(4096);
                 buffer[1] = malloc(4096);
-                int read_result_fd[2];
+                int buffer_size[2];
+                buffer_size[0] = 0;
+                buffer_size[1] = 0;
+                int dead = 0;
                 struct pollfd fds[2];
-                int timeout_msecs = -1;
+                const int timeout_msecs = -1;
                 int ret;
 
+                const int events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
                 fds[0].fd = master;
-                int events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
                 fds[0].events = events;
                 fds[1].fd = acceptfd;
                 fds[1].events = events;
@@ -144,52 +157,66 @@ int main (int argc, char ** argv)
 
                         for (i = 0; i < 2; i++)
                         {
-							int j = i == 0 ? 1 : 0;
+                            int j = i == 0 ? 1 : 0;
+
                             if (fds[i].revents & POLLIN)
                             {
-                                read_result_fd[i] = read(fds[i].fd, buffer[i], 4096);
+                                int read_result = read(fds[i].fd, buffer[i], 4096 - buffer_size[i]);
 
-                                if (read_result_fd[i] == 0)
+                                if (read_result == 0)
                                 {
                                     close(fds[i].fd);
-                                    fds[i].events = 0;
+                                    dead = 1;
                                 }
-                                else if (read_result_fd[i] < 0)
+                                else if (read_result < 0)
                                     if (errno != EWOULDBLOCK && errno != EAGAIN)
                                     {
-                                        close(fds[i].fd);
-                                        fds[i].events = 0;
-                                        free(buffer[0]);
-                                        free(buffer[1]);
-                                        free(buffer);
-                                        exit(1);
                                     }
 
-                                fds[j].events = fds[!i].events | POLLOUT;
+                                if (read_result > 1)
+                                {
+                                    buffer_size[i] += read_result;
+                                }
                             }
 
                             if (fds[j].revents & POLLOUT)
                             {
-                                if (read_result_fd[i] != 0)
-                                {
-                                    read_result_fd[i] -= write(fds[j].fd, buffer[i], read_result_fd[i]);
-                                }
-                                fds[j].events = fds[j].events ^ POLLOUT;
+                                int write_result = write(fds[j].fd, buffer[i], buffer_size[i]);
+                                buffer_size[i] -= write_result;
 
+                                if (write_result < 0)
+                                    if (errno != EWOULDBLOCK && errno != EAGAIN)
+                                    {
+                                        my_exit(buffer, fds[i].fd, 1);
+                                    }
                             }
+
+                            if (buffer_size[i] > 0)
+                            {
+                                fds[j].events = fds[j].events | POLLOUT;
+                            }
+                            else
+                            {
+                                if (fds[j].events & POLLOUT)
+                                {
+                                    fds[j].events = fds[j].events ^ POLLOUT;
+
+                                    if (dead)
+                                    {
+                                        my_exit(buffer, fds[j].fd, 1);
+                                    }
+                                }
+                            }
+
                         }
+
                         for (i = 0; i < 2; i++)
                         {
                             int const else_polls = POLLERR | POLLHUP | POLLNVAL;
 
                             if (fds[i].revents & else_polls)
                             {
-                                close(fds[1].fd);
-                                fds[1].events = 0;
-                                free(buffer[0]);
-                                free(buffer[1]);
-                                free(buffer);
-                                exit(1);
+                                my_exit(buffer, fds[i].fd, 1);
                             }
                         }
                     }
@@ -197,13 +224,6 @@ int main (int argc, char ** argv)
                     {
                         break;
                     }
-
-                    //  if ( !ret )
-                    //  {
-                    //      write(fds[0].fd, "Timeout!\n", 9);
-                    //      exit(0);
-                    //      free(buffer[0]);free(buffer[1]);free(buffer);
-                    //  }
                 }
 
                 free(buffer[0]);
