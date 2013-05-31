@@ -86,17 +86,6 @@ int main (int argc, char ** argv)
         }
         else
         {
-            //close(0);
-            //close(1);
-            //close(2);
-
-            write(acceptfd, "foo\n", 4);
-//            if (close(acceptfd) == -1)
-//           {
-//               fprintf(stderr, "Could not close\n");
-//               exit(EXIT_FAILURE);
-//           }
-
             int master, slave;
             char buff[4096];
 
@@ -109,8 +98,6 @@ int main (int argc, char ** argv)
             if (fork())
             {
                 close(slave);
-                //close(master);
-                //close(acceptfd);
                 int flags;
                 flags = fcntl(master, F_GETFL);
 
@@ -135,92 +122,94 @@ int main (int argc, char ** argv)
                 buffer[1] = malloc(4096);
                 int read_result_fd[2];
                 struct pollfd fds[2];
-                //struct pollfd fds_out[2];
-                int timeout_msecs = 500;
+                int timeout_msecs = -1;
                 int ret;
 
                 fds[0].fd = master;
-                fds[0].events = POLLIN | POLLOUT;
+                int events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
+                fds[0].events = events;
                 fds[1].fd = acceptfd;
-                fds[1].events = POLLOUT | POLLIN;
+                fds[1].events = events;
+                sleep(1);
 
-                // fds_out[0].fd = acceptfd;
-                // fds_out[0].events = POLLIN | POLLRDBAND | POLLPRI;
-                // fds_out[1].fd = master;
-                // fds_out[1].events = POLLOUT | POLLWDBAND;
+                write(acceptfd, "Hello! You are in rshell\n", 25);
 
                 while (1)
                 {
-                    sleep(1);
                     ret = poll(fds, 2, timeout_msecs);
 
                     if (ret > 0)
                     {
-                        if (fds[0].revents & POLLIN)
-                        {
-                            read_result_fd[0] = read(fds[0].fd, buffer[0], 4096);
+                        int i;
 
-                            if (read_result_fd[0] == 0)
+                        for (i = 0; i < 2; i++)
+                        {
+							int j = i == 0 ? 1 : 0;
+                            if (fds[i].revents & POLLIN)
                             {
+                                read_result_fd[i] = read(fds[i].fd, buffer[i], 4096);
+
+                                if (read_result_fd[i] == 0)
+                                {
+                                    close(fds[i].fd);
+                                    fds[i].events = 0;
+                                }
+                                else if (read_result_fd[i] < 0)
+                                    if (errno != EWOULDBLOCK && errno != EAGAIN)
+                                    {
+                                        close(fds[i].fd);
+                                        fds[i].events = 0;
+                                        free(buffer[0]);
+                                        free(buffer[1]);
+                                        free(buffer);
+                                        exit(1);
+                                    }
+
+                                fds[j].events = fds[!i].events | POLLOUT;
+                            }
+
+                            if (fds[j].revents & POLLOUT)
+                            {
+                                if (read_result_fd[i] != 0)
+                                {
+                                    read_result_fd[i] -= write(fds[j].fd, buffer[i], read_result_fd[i]);
+                                }
+                                fds[j].events = fds[j].events ^ POLLOUT;
+
+                            }
+                        }
+                        for (i = 0; i < 2; i++)
+                        {
+                            int const else_polls = POLLERR | POLLHUP | POLLNVAL;
+
+                            if (fds[i].revents & else_polls)
+                            {
+                                close(fds[1].fd);
+                                fds[1].events = 0;
+                                free(buffer[0]);
+                                free(buffer[1]);
                                 free(buffer);
                                 exit(1);
                             }
-                            else if (read_result_fd[0] < 0)
-                                if (errno != EWOULDBLOCK && errno != EAGAIN)
-                                {
-                                    free(buffer);
-                                    exit(1);
-                                }
                         }
-
-                        if (fds[1].revents & POLLOUT)
-                        {
-                            if (read_result_fd[0] != 0)
-                            {
-                                write(fds[1].fd, buffer[0], read_result_fd[0]);
-                            }
-
-                            read_result_fd[0] = 0;
-                        }
-
-                        if (fds[1].revents & POLLIN)
-                        {
-                            read_result_fd[1] = read(fds[1].fd, buffer[1], 4096);
-
-                            if (read_result_fd[1] == 0)
-                            {
-                                free(buffer);
-                                exit(1);
-                            }
-                            else if (read_result_fd[1] < 0)
-                                if (errno != EWOULDBLOCK && errno != EAGAIN)
-                                {
-                                    free(buffer);
-                                    exit(1);
-                                }
-                        }
-
-                        if (fds[0].revents & POLLOUT)
-                        {
-                            if (read_result_fd[1] != 0)
-                            {
-                                write(fds[0].fd, buffer[1], read_result_fd[1]);
-                            }
-
-                            read_result_fd[1] = 0;
-                        }
+                    }
+                    else
+                    {
+                        break;
                     }
 
                     //  if ( !ret )
                     //  {
                     //      write(fds[0].fd, "Timeout!\n", 9);
                     //      exit(0);
-                    //      free(buffer);
+                    //      free(buffer[0]);free(buffer[1]);free(buffer);
                     //  }
                 }
 
-                exit(0);
+                free(buffer[0]);
+                free(buffer[1]);
                 free(buffer);
+                exit(0);
             }
             else
             {
@@ -236,27 +225,6 @@ int main (int argc, char ** argv)
                 execl("/bin/zsh", "zsh", NULL);
                 exit(1);
             }
-
-            /*
-                //close(master);
-                close(slave);
-            	while(1)
-            	{
-            //		int read_result_master = read(master, buffer, read_result_fd);
-            //		if (read_result_master == -1)
-            //		{
-            //			fprintf(stderr, "Read error\n");
-            //			close(master);
-            //		}
-            //		write(acceptfd, buffer, read_result_master);
-
-            	}
-            }
-            else
-            {
-            }
-            */
-
         }
     }
 
