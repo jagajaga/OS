@@ -183,13 +183,13 @@ int main (int argc, char ** argv)
                             if (fds[j].revents & POLLOUT)
                             {
                                 int write_result = write(fds[j].fd, buffer[i], buffer_size[i]);
-                                buffer_size[i] -= write_result;
 
                                 if (write_result < 0)
                                     if (errno != EWOULDBLOCK && errno != EAGAIN)
                                     {
                                         my_exit(buffer, fds[j].fd, 1);
                                     }
+                                buffer_size[i] -= write_result;
                             }
 
                             if (buffer_size[i] > 0)
