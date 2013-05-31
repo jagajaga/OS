@@ -171,6 +171,7 @@ int main (int argc, char ** argv)
                                 else if (read_result < 0)
                                     if (errno != EWOULDBLOCK && errno != EAGAIN)
                                     {
+                                        my_exit(buffer, fds[i].fd, 1);
                                     }
 
                                 if (read_result > 1)
@@ -187,7 +188,7 @@ int main (int argc, char ** argv)
                                 if (write_result < 0)
                                     if (errno != EWOULDBLOCK && errno != EAGAIN)
                                     {
-                                        my_exit(buffer, fds[i].fd, 1);
+                                        my_exit(buffer, fds[j].fd, 1);
                                     }
                             }
 
