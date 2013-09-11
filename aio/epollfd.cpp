@@ -20,9 +20,9 @@ epollfd::~epollfd()
 
 void epollfd::subscribe(int fd, int what, std::function<void()> const& cont_ok, std::function<void()> const& cont_err)
 {
-    my_map.count(fd);
+	my_map.count(fd);
 
-    if (my_map.find(fd) == my_map.end())
+	if (my_map.find(fd) == my_map.end())
     {
         epoll_event event;
 
