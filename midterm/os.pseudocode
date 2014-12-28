@@ -21,155 +21,155 @@ kernel()
 
     while true
     {
-		current_process = runnable.head()
-		context = current_process.exec()
-		allocator = allocator(current_process.hd.mmu)
-		disk = driver.get_disk()
-		switch context.tag
-		{
-			case timer_alarm_interrupt:
-				for(ptr : black_pages)
-					if (associated_map.contains(ptr))
-					{
-						DiskBlockId = associated_map[ptr]
-						disk.associate(ptr, DiskBlockId, current_process)
-					}
-				runnable.add(..., context.cont())
-				break
-			case fork_tag:
-				pid = new_pid()
-				runnable.add(Process(pid, context.cont(0), ...))
-				runnable.add(Process(current_process.pid, context.cont(pid), ...))
-				break
-			case exit_tag:
+        current_process = runnable.head()
+        context = current_process.exec()
+        allocator = allocator(current_process.hd.mmu)
+        disk = driver.get_disk()
+        switch context.tag
+        {
+            case timer_alarm_interrupt:
+                for(ptr : black_pages)
+                    if (associated_map.contains(ptr))
+                    {
+                        DiskBlockId = associated_map[ptr]
+                        disk.associate(ptr, DiskBlockId, current_process)
+                    }
+                runnable.add(..., context.cont())
+                break
+            case fork_tag:
+                pid = new_pid()
+                runnable.add(Process(pid, context.cont(0), ...))
+                runnable.add(Process(current_process.pid, context.cont(pid), ...))
+                break
+            case exit_tag:
 
-			case alloc_ram_pages_tag:
-				k = context.argv[0]
-				if (ptr = allocator.get_free_page_by_size(k))
-				{
-					allocator.allocate(ptr, k) 
-					white_pages.add(ptr)
-					runnable.add(Process(..., context.cont(ptr))
-					break
-				}
-				else
-				{
-					for (page : white_pages)
-					{
-					 if (page.get_size() >= k)
-					 {
-						 white_pages.remove(page)
-						 ptr = allocator.allocate(page, k)
-						 white_pages.add(ptr)
-						 runnable.add(Process(..., context.cont(ptr))
-						 break
-					 }
-					 next = false
-					}
-					if (!next)
-					 break
-					for (page : black_pages)
-					{
-					 if (page.get_size() >= k)
-					 {
-						 black_pages.remove(page)
-						 allocator.release(page)
-						 ptr = allocator.allocate(page, k) white_pages.add(ptr)
-						 runnable.add(Process(..., context.cont(ptr))
-						 break
-					 }
-					 next = false
-					}
-					if (!next)
-					 break
-					disk.add_page(k, current_process) //it will create new disk job, and after it is done it will create interrupt and in first argument where will be process wich was asking for disk allocaating 
-					waiting_for_allocation.add(current_process)
-					break
-				}
-			case alloc_disk_done_interrupt:
-				was_proc = context.argv[0]
-				ptr = context.argv[1]
-				disk_pages[was_proc].add(ptr)
-				waiting_for_allocation.remove(was_proc)
-				runnable.add(Process(was_proc, ..., was_proc.ccontext.cont(ptr))
-				runnable.add(..., context.cont())
-				break
-			case alloc_disk_pages_tag:
-				k = context.argv[0]
-				disk.add_page(k, current_process) 
-				waiting_for_allocation.add(current_process)
-				break
-			case read_block_done_interrupt:
-				was_proc = context.argv[0]
-				count = disk.get_cached_read_count(was_proc)
-				waiting_read.remove(was_proc)
-				runnable.add(Process(was_proc, ..., was_proc.context.cont(count))
-				runnable.add(..., context.cont())
-				break
-			case write_block_done_interrupt:
-				was_proc = context.argv[0]
-				count = disk.get_cached_write_count(was_proc)
-				waiting_write.remove(was_proc)
-				runnable.add(Process(was_proc, ..., was_proc.context.cont(count))
-				runnable.add(..., context.cont())
-				break
-			case read_block_tag:
-				fd = current_process.fdTable[context.argv[0]]
-				buffer = context.argv[1]
-				size = context.argv[2]
-				disk.read_block(fd, buffer, size, current_process) //same logic as add_page
-				waiting_read.add(current_process)
-				break
-			case write_block_tag:
-				fd = current_process.fdTable[context.argv[0]]
-				buffer = context.argv[1]
-				size = context.argv[2]
-				disk.write_block(fd, buffer, size, current_process) //same logic as add_page
-				waiting_write.add(current_process)
-				break
-			case page_read_interrupt:
-				page = context.argv[0]
-				if (white_pages.contains(page))
-				{
-					white_pages.remove(page)
-					black_pages.add(page)
-					runnable.add(Process(..., context.cont(page)))
-					break
-				}
-				if (black_pages.contains(page))
-				{
-					runnable.add(Process(..., context.cont(page)))
-					break
-				}
-				if (disk_pages[current_process].contains(page))
-				{
-					ptr = allocator.load_to_ram(page)
-					disk_pages[current_process].remove(page)
-					white_pages.add(ptr)
-					runnable.add(Process(..., context.cont(ptr)))
-					break
-				}
-				runnable.add(Process(..., context.cont(exit)))
-				break
-			case associate_done_interrupt:
-				was_proc = context.argv[0]
-				ptr = context.argv[1]
-				diskBlockId = disk.get_cached_diskBlockId(was_proc)
-				associated_map[allocator.get_prt(ptr)] = diskBlockId
-				waiting_associate.remove(was_proc)
-				runnable.add(Process(was_proc, ..., was_proc.context.cont(diskBlockId))
-				runnable.add(..., context.cont())
-				break
-			case associate:
-				ptr = context.argv[0]
-				diskBlockId = context.argv[1]
-				disk.associate(ptr, DiskBlockId, current_process)
-				waiting_associate.add(current_process)
-				break
-			case deassociate:
-				ptr = context.argv[0]
-				waiting_for_deassociate.add(associated_map[ptr])
-				break
-		}
+            case alloc_ram_pages_tag:
+                k = context.argv[0]
+                if (ptr = allocator.get_free_page_by_size(k))
+                {
+                    allocator.allocate(ptr, k) 
+                    white_pages.add(ptr)
+                    runnable.add(Process(..., context.cont(ptr))
+                    break
+                }
+                else
+                {
+                    for (page : white_pages)
+                    {
+                     if (page.get_size() >= k)
+                     {
+                         white_pages.remove(page)
+                         ptr = allocator.allocate(page, k)
+                         white_pages.add(ptr)
+                         runnable.add(Process(..., context.cont(ptr)))
+                         break
+                     }
+                     next = false
+                    }
+                    if (!next)
+                     break
+                    for (page : black_pages)
+                    {
+                     if (page.get_size() >= k)
+                     {
+                         black_pages.remove(page)
+                         allocator.release(page)
+                         ptr = allocator.allocate(page, k) white_pages.add(ptr)
+                         runnable.add(Process(..., context.cont(ptr))
+                         break
+                     }
+                     next = false
+                    }
+                    if (!next)
+                     break
+                    disk.add_page(k, current_process) //it will create new disk job, and after it is done it will create interrupt and in first argument where will be process wich was asking for disk allocaating 
+                    waiting_for_allocation.add(current_process)
+                    break
+                }
+            case alloc_disk_done_interrupt:
+                was_proc = context.argv[0]
+                ptr = context.argv[1]
+                disk_pages[was_proc].add(ptr)
+                waiting_for_allocation.remove(was_proc)
+                runnable.add(Process(was_proc, ..., was_proc.ccontext.cont(ptr))
+                runnable.add(..., context.cont())
+                break
+            case alloc_disk_pages_tag:
+                k = context.argv[0]
+                disk.add_page(k, current_process) 
+                waiting_for_allocation.add(current_process)
+                break
+            case read_block_done_interrupt:
+                was_proc = context.argv[0]
+                count = disk.get_cached_read_count(was_proc)
+                waiting_read.remove(was_proc)
+                runnable.add(Process(was_proc, ..., was_proc.context.cont(count))
+                runnable.add(..., context.cont())
+                break
+            case write_block_done_interrupt:
+                was_proc = context.argv[0]
+                count = disk.get_cached_write_count(was_proc)
+                waiting_write.remove(was_proc)
+                runnable.add(Process(was_proc, ..., was_proc.context.cont(count))
+                runnable.add(..., context.cont())
+                break
+            case read_block_tag:
+                fd = current_process.fdTable[context.argv[0]]
+                buffer = context.argv[1]
+                size = context.argv[2]
+                disk.read_block(fd, buffer, size, current_process) //same logic as add_page
+                waiting_read.add(current_process)
+                break
+            case write_block_tag:
+                fd = current_process.fdTable[context.argv[0]]
+                buffer = context.argv[1]
+                size = context.argv[2]
+                disk.write_block(fd, buffer, size, current_process) //same logic as add_page
+                waiting_write.add(current_process)
+                break
+            case page_read_interrupt:
+                page = context.argv[0]
+                if (white_pages.contains(page))
+                {
+                    white_pages.remove(page)
+                    black_pages.add(page)
+                    runnable.add(Process(..., context.cont(page)))
+                    break
+                }
+                if (black_pages.contains(page))
+                {
+                    runnable.add(Process(..., context.cont(page)))
+                    break
+                }
+                if (disk_pages[current_process].contains(page))
+                {
+                    ptr = allocator.load_to_ram(page)
+                    disk_pages[current_process].remove(page)
+                    white_pages.add(ptr)
+                    runnable.add(Process(..., context.cont(ptr)))
+                    break
+                }
+                runnable.add(Process(..., context.cont(exit)))
+                break
+            case associate_done_interrupt:
+                was_proc = context.argv[0]
+                ptr = context.argv[1]
+                diskBlockId = disk.get_cached_diskBlockId(was_proc)
+                associated_map[allocator.get_prt(ptr)] = diskBlockId
+                waiting_associate.remove(was_proc)
+                runnable.add(Process(was_proc, ..., was_proc.context.cont(diskBlockId))
+                runnable.add(..., context.cont())
+                break
+            case associate:
+                ptr = context.argv[0]
+                diskBlockId = context.argv[1]
+                disk.associate(ptr, DiskBlockId, current_process)
+                waiting_associate.add(current_process)
+                break
+            case deassociate:
+                ptr = context.argv[0]
+                waiting_for_deassociate.add(associated_map[ptr])
+                break
+        }
     }
 }
